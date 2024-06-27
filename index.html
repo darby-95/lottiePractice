@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body>div {
+            height: 100vh;
+        }
+
+        #animationWindow {
+            width: 500px;
+            height: 400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div></div>
+
+        <div id="animationWindow"></div>
+
+    <div>
+
+        <!-- lottie 확장명 : 용량이 작다는 장점이 있으나, lottie(확장명)이 오류가 있다는 단점이 있다. -->
+        <dotlottie-player src="./lottie.lottie" background="transparent" speed="1" style="width: 300px; height: 300px;"
+            loop autoplay></dotlottie-player>
+        <!-- json 확장명 : lottie에 비해 용량이 크다는 장점이 있으나, .lottie(확장명)보다는 오류가 덜하다. -->
+        <lottie-player src="./lottie.json" background="transparent" speed="1" style="width: 300px; height: 300px"
+            direction="1" mode="normal" autoplay loop></lottie-player>
+
+        <!-- autoplay, loop, hover, controls 의 속성을 줄 수 있다. -->
+        <!-- hover만 단독으로 주면 한번만 실행이 되고 hover와 loop를 주면 반복하여 hover를 사용할 수 있다. -->
+        <!-- 간혹 hover만 사용하면 반복하여 사용할 수 있는 경우도 있으나, loop를 주면 그 오류를 없앨 수 있다.-->
+        <dotlottie-player src="./lottie.json" background="transparent" speed="1" style="width: 300px; height: 300px;"
+            hover loop></dotlottie-player>
+    </div>
+
+        <div id="animationWindow2"></div>
+
+
+    <!-- 🌟🌟🌟 무조건 gsap과 scrolltrigger가 상단에 있어야 먼저 파일을 읽고 아래를 실행시킬 수 있다. -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+
+
+    <!-- lottie 실행시키기 -->
+    <!-- <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script> -->
+
+    <!-- json 실행시키기 🌟🌟🌟 lottie는 오류가 많아 json 권장 -->
+    <!-- 자체 실행, hover 실행 -->
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+    <!-- lottie cdn -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger)
+
+        LottieScrollTrigger({
+            target: "#animationWindow",
+            path: "./diamond.json",
+            speed: "medium",
+            scrub: 2,
+        });
+        LottieScrollTrigger({
+            target: "#animationWindow2",
+            path: "./hello.json",
+            speed: "fast",
+            scrub: 2,
+        });
+
+        function LottieScrollTrigger(vars) {
+            let playhead = {
+                    frame: 0
+                },
+                target = gsap.utils.toArray(vars.target)[0],
+                speeds = { // lottie의 속도
+                    slow: "+=2000",
+                    medium: "+=1000",
+                    fast: "+=500"
+                },
+                st = {
+                    trigger: target,
+                    pin: true,
+                    start: "top top",
+                    end: speeds[vars.speed] || "+=1000", // lottie의 끝나는 지점
+                    scrub: 1,
+                },
+                ctx = gsap.context && gsap.context(),
+                animation = lottie.loadAnimation({
+                    container: target,
+                    renderer: vars.renderer || "svg",
+                    loop: false,
+                    autoplay: false,
+                    path: vars.path,
+                    rendererSettings: vars.rendererSettings || {
+                        preserveAspectRatio: "xMidYMid slice",
+                    },
+                });
+            for (let p in vars) {
+                // let users override the ScrollTrigger defaults
+                st[p] = vars[p];
+            }
+            animation.addEventListener("DOMLoaded", function () {
+                let createTween = function () {
+                    animation.frameTween = gsap.to(playhead, {
+                        frame: animation.totalFrames - 1,
+                        ease: "none",
+                        onUpdate: () => animation.goToAndStop(playhead.frame, true),
+                        scrollTrigger: st,
+                    });
+                    return () => animation.destroy && animation.destroy();
+                };
+                ctx && ctx.add ? ctx.add(createTween) : createTween();
+                // in case there are any other ScrollTriggers on the page and the loading of this Lottie asset caused layout changes
+                ScrollTrigger.sort();
+                ScrollTrigger.refresh();
+            });
+            return animation;
+        }
+    </script>
+</body>
+
+</html>
